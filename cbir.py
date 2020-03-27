@@ -7,6 +7,9 @@ import numpy as np
 import cv2
 import imutils
 import csv
+import argparse
+import glob
+
 
 
 #creating the application main window.   
@@ -17,6 +20,7 @@ app.resizable(0, 0)
 
 
 
+#================================================
 class ColorDescriptor:
 	def __init__(self, bins):
 		# store the number of bins for the 3D histogram
@@ -81,6 +85,7 @@ class ColorDescriptor:
 		# return the histogram
 		return hist
 
+#================================================
 class Searcher:
 	def __init__(self, indexPath):
 		# store our index path
@@ -128,6 +133,47 @@ class Searcher:
 		# return the chi-squared distance
 		return d
 
+#================================================
+
+# USAGE
+# python index.py --dataset dataset --index index.csv
+
+# import the necessary packages
+#from pyimagesearch.colordescriptor import ColorDescriptor
+
+# construct the argument parser and parse the arguments
+#ap = argparse.ArgumentParser()
+#ap.add_argument("-d", "--dataset", required = True,
+#	help = "Path to the directory that contains the images to be indexed")
+#ap.add_argument("-i", "--index", required = True,
+#	help = "Path to where the computed index will be stored")
+#args = vars(ap.parse_args())
+
+# initialize the color descriptor
+cd = ColorDescriptor((8, 12, 3))
+
+# open the output index file for writing
+output = open("C:\\Users\\Siddesh\\Desktop\\CBIR\\work\\index.csv","w")
+
+# use glob to grab the image paths and loop over them
+for imagePath in glob.glob("C:\\Users\\Siddesh\\Desktop\\CBIR\\work\\dataset" + "/*"):
+	# extract the image ID (i.e. the unique filename) from the image
+	# path and load the image itself
+	imageID = imagePath[imagePath.rfind("/") + 1:]
+	image = cv2.imread(imagePath)
+
+	# describe the image
+	features = cd.describe(image)
+
+	# write the features to file
+	features = [str(f) for f in features]
+	output.write("%s,%s\n" % (imageID, ",".join(features)))
+
+# close the index file  ==================================================================It may can cause error
+output.close()
+
+
+
 def open_image():
      global imagefile
      app.filename = filedialog.askopenfilename(initialdir="C:",title="Open image",filetypes=(("png files","*.png"),("all files","*.*")))
@@ -136,76 +182,10 @@ def open_image():
      photo.image = img
      photo.create_image(0, 0, anchor=NW, image=img)
      
-def bengali():
-    result = pytesseract.image_to_string(app.filename,lang ='ben')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
-
-def gujrati():
-    result = pytesseract.image_to_string(app.filename,lang ='guj')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
-
-def hindi():
-    result = pytesseract.image_to_string(app.filename,lang ='hin')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
-
-def kannada():
-    result = pytesseract.image_to_string(app.filename,lang ='kan')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
-
-def malyalam():
-    result = pytesseract.image_to_string(app.filename,lang ='hin')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
-
-
-def marathi():
-    result = pytesseract.image_to_string(app.filename,lang ='mar')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
-
-def nepali():
-    result = pytesseract.image_to_string(app.filename,lang ='nep')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
-
-def punjabi():
-    result = pytesseract.image_to_string(app.filename,lang ='pun')
-    output.delete('1.0', END)
-    output.insert(1.0,result) 
-
-def sanskrit():
-    result = pytesseract.image_to_string(app.filename,lang ='san')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
-
-def sindhi():
-    result = pytesseract.image_to_string(app.filename,lang ='snd')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
-    
-def tamil():
-    result = pytesseract.image_to_string(app.filename,lang ='tam')
-    output.delete('1.0', END)
-    output.insert(1.0,result)
 
 
 #button defination 
 button_0 = Button(app,text="Open Image",bg="slate gray",fg="black",command=open_image,font="Times",width=90)
-button_1 = Button(app, text="Bengali",bg="ivory4",fg="white",width = "15",command=bengali,font="Times")
-button_2 = Button(app, text="Gujrati",bg="ivory4",fg="white",width = "15",command=gujrati,font="Times")
-button_3 = Button(app, text="Hindi",bg="ivory4",fg="white",width = "15",command=hindi,font="Times")
-button_4 = Button(app, text="Kannada",bg="ivory4",fg="white",width = "15",command=kannada,font="Times")
-button_5 = Button(app, text="Malyalam",bg="ivory4",fg="white",width = "15",command=malyalam,font="Times")
-button_6 = Button(app, text="Marathi",bg="ivory4",fg="white",width = "15",command=marathi,font="Times")
-button_7 = Button(app, text="Nepali",bg="ivory4",fg="white",width = "15",command=nepali,font="Times")
-button_8 = Button(app, text="Punjabi",bg="ivory4",fg="white",width = "15",command=punjabi,font="Times")
-button_9 = Button(app, text="Sanskrit",bg="ivory4",fg="white",width = "15",command=sanskrit,font="Times")
-button_10 = Button(app, text="Sindhi",bg="ivory4",fg="white",width = "15",command=sindhi,font="Times")
-button_11 = Button(app, text="Tamil",bg="ivory4",fg="white",width = "15",command=tamil,font="Times")
 
 
 #canvas used to display image
@@ -222,26 +202,6 @@ button_0.grid(row=0,column=0,columnspan=3,padx=10,pady=5 )
 
 photo.grid(row ="1",column="0",rowspan=11,padx="20")
 output.grid(row=2,column = 2,rowspan=11,padx=10)
-
-
-button_1.grid(row=1 ,column =1)
-button_2.grid(row=2 ,column=1)
-button_3.grid(row=3 ,column = 1)
-button_4.grid(row=4 ,column = 1)
-button_5.grid(row=5 ,column = 1)
-button_6.grid(row=6 ,column = 1)
-button_7.grid(row=7 ,column = 1)
-button_8.grid(row=8 ,column = 1)
-button_9.grid(row=9 ,column = 1)
-button_10.grid(row=10 ,column = 1)
-button_11.grid(row=11 ,column = 1)
-
-
-
-
-
-
-
 
 
 #Entering the event main loop  
