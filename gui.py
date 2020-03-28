@@ -126,8 +126,10 @@ class Searcher:
 # ==========================================================================================================================================================
 
 def open_image():
+    global resultdata
     global filename
     filename = filedialog.askdirectory()
+
     cd = ColorDescriptor((8, 12, 3))
     output = open(filename + "/index.csv", "w")
     # use glob to grab the image paths and loop over them
@@ -156,6 +158,7 @@ def open_image():
 def select_image():
     global fileimage
     fileimage = filedialog.askopenfilename(initialdir="C:", title="Open image",filetypes=(("jpeg files","*.jpg"),("all files","*.*")))
+    resultdata.append(fileimage)
     text.delete(1.0, END)
     text.insert(1.0, fileimage)
     text.insert(1.0, "Selected image : ")
@@ -228,7 +231,13 @@ def search_similar():
             text.insert(1.0, str(count) + " " + resultID + "\n")
             count += 1
         text.insert(1.0, "Similar images : " + "\n")
-        img2 = ImageTk.PhotoImage(resultdata[0])
+
+        width = 400
+        height = 400
+        print(resultdata[0])
+        img = Image.open(resultdata[0])
+        img = img.resize((width, height), Image.ANTIALIAS)
+        img2 = ImageTk.PhotoImage(img)
         panel.configure(image=img2)
         panel.image = img2
     for i in resultdata:
