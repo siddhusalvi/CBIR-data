@@ -132,7 +132,7 @@ def open_image():
     output = open(filename + "/index.csv", "w")
     # use glob to grab the image paths and loop over them
     filecount = 1
-    for imagePath in glob.glob(filename + "/*"):
+    for imagePath in glob.glob(filename +"//" "*.*"):
         if imagePath.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
             text.insert(1.0, str(filecount) + " : " + imagePath + "\n")
             filecount += 1
@@ -149,6 +149,7 @@ def open_image():
             features = [str(f) for f in features]
             output.write(imagePath + "," + ",".join(features) + "\n")
     text.insert(1.0, "Indexed images : \n")
+
     output.close()
 
 
@@ -200,29 +201,39 @@ def back():
 def search_similar():
     # perform the search
     # print(filename)
-    cd = ColorDescriptor((8, 12, 3))
+
+    global fileimage
     global resultdata
+    global filename
+
+    # initialize the image descriptor
+    cd = ColorDescriptor((8, 12, 3))
+
+    # load the query image and describe it
     query = cv2.imread(fileimage)
     features = cd.describe(query)
 
-    searcher = Searcher(filename + "/index.csv")
+    # perform the search
+    searcher = Searcher(filename+"/index.csv")
     results = searcher.search(features)
-
-    # display the query
-    query = cv2.resize(query, (500, 300))
-    text.delete(1.0, END)
 
     if(len(results)==0):
         text.delete(1.0, END)
         text.insert(1.0, "No similar images found...")
     else:
+        count = 1
         for (score, resultID) in results:
-            text.insert(1.0, resultID + "\n")
+            # load the result image and display it
             resultdata.append(resultID)
+            text.insert(1.0, str(count) + " " + resultID + "\n")
+            count += 1
         text.insert(1.0, "Similar images : " + "\n")
         img2 = ImageTk.PhotoImage(resultdata[0])
         panel.configure(image=img2)
         panel.image = img2
+    for i in resultdata:
+        print(i)
+    print(len(resultdata))
 # ==========================================================================================================================================================
 
 
