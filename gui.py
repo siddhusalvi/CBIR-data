@@ -1,16 +1,22 @@
+# for csv operation
 import csv
+# to access images in folder
 import glob
-import tkinter as tk
+# for GUI
 from tkinter import *
+import tkinter as tk
+# for file dialog
 from tkinter import filedialog
-from PIL import ImageTk, Image
-import  time
+# for image operations
 import cv2
+# for basic image processing
 import imutils
+# for image operations to arrays
 import numpy as np
+# image operations
+from PIL import ImageTk, Image
 
 
-# ==========================================================================================================================================================
 class ColorDescriptor:
     def __init__(self, bins):
         # store the number of bins for the 3D histogram
@@ -120,182 +126,172 @@ class Searcher:
         d = 0.5 * np.sum([((a - b) ** 2) / (a + b + eps)
                           for (a, b) in zip(histA, histB)])
 
-    # return the chi-squared distance
-
-
-# ==========================================================================================================================================================
 
 def open_image():
-    global resultdata
-    global filename
-    filename = filedialog.askdirectory()
-
+    global result_data
+    global folder_name
+    # To select dataset folder
+    folder_name = filedialog.askdirectory()
     cd = ColorDescriptor((8, 12, 3))
-    output = open(filename + "/index.csv", "w")
-    # use glob to grab the image paths and loop over them
+    output = open(folder_name + "/index.csv", "w") # creating csv file
     filecount = 1
-    for imagePath in glob.glob(filename +"//" "*.*"):
+    for imagePath in glob.glob(folder_name + "//" "*.*"):
         if imagePath.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
-            text.insert(1.0, str(filecount) + " : " + imagePath + "\n")
+            # printing indexed images
+            text_output.insert(1.0, str(filecount) + " : " + imagePath + "\n")
             filecount += 1
             imageID = imagePath[imagePath.rfind("/") + 1:]
             image = cv2.imread(imagePath)
-            window = "data"
             image = cv2.resize(image, (500, 300))
-            # cv2.imshow(window,image)
-            # cv2.waitKey(0)
-            # describe the image
             features = cd.describe(image)
-
             # write the features to file
             features = [str(f) for f in features]
             output.write(imagePath + "," + ",".join(features) + "\n")
-    text.insert(1.0, "Indexed images : \n")
-
+    text_output.insert(1.0, "Indexed images : \n")
     output.close()
 
 
 def select_image():
-    global fileimage
-    fileimage = filedialog.askopenfilename(initialdir="C:", title="Open image",filetypes=(("jpeg files","*.jpg"),("all files","*.*")))
-    resultdata.append(fileimage)
-    text.delete(1.0, END)
-    text.insert(1.0, fileimage)
-    text.insert(1.0, "Selected image : ")
+    global image_file
+    # selecting image to search
+    image_file = filedialog.askopenfilename(initialdir="C:", title="Open image", filetypes=(("jpeg files", "*.jpg"), ("all files", "*.*")))
+    # adding image to result file
+    result_data.append(image_file)
+    text_output.delete(1.0, END)
+    # printing similar images on console
+    text_output.insert(1.0, image_file)
+    text_output.insert(1.0, "Selected image : ")
 
     width = 400
     height = 400
-    img = Image.open(fileimage)
+    img = Image.open(image_file)
     img = img.resize((width, height), Image.ANTIALIAS)
-    img2 = ImageTk.PhotoImage(img)
-    panel.configure(image=img2)
-    panel.image = img2
+    img1 = ImageTk.PhotoImage(img)
+    image_panel.configure(image=img1)
+    image_panel.image = img1
 
 
-    # load the query image and describe it
 def display():
+    # function to display similar images
     width = 400
     height = 400
-    img = Image.open(resultdata[current])
+    img = Image.open(result_data[current_index])
     img = img.resize((width, height), Image.ANTIALIAS)
-    img2 = ImageTk.PhotoImage(img)
-    panel.configure(image=img2)
-    panel.image = img2
+    img1 = ImageTk.PhotoImage(img)
+    image_panel.configure(image=img1)
+    image_panel.image = img1
+
+
 def position():
-    if len(resultdata) != 0:
+    # for result check
+    if len(result_data) != 0:
         return TRUE
     else:
         return FALSE
+
 def next():
-    global current
-    if(current+1 == len(resultdata)) and position():
-        pass
-    else:
-        current+=1
+    # function to display next image
+    global current_index
+    if position() and (current_index + 1 == len(result_data)):
+        current_index += 1
         display()
+    else:
+        pass
+
 def back():
-    global current
-    if current == 0 and position():
-        pass
-    else:
-        current -=1
+    # function to display previous image
+    global current_index
+    if position() and current_index == 0:
+        current_index -= 1
         display()
+    else:
+        pass
+
 
 def search_similar():
-    # perform the search
-    # print(filename)
-
-    global fileimage
-    global resultdata
-    global filename
+    global image_file
+    global result_data
+    global folder_name
 
     # initialize the image descriptor
     cd = ColorDescriptor((8, 12, 3))
 
     # load the query image and describe it
-    query = cv2.imread(fileimage)
+    query = cv2.imread(image_file)
     features = cd.describe(query)
 
     # perform the search
-    searcher = Searcher(filename+"/index.csv")
+    searcher = Searcher(folder_name + "/index.csv")
     results = searcher.search(features)
 
-    if(len(results)==0):
-        text.delete(1.0, END)
-        text.insert(1.0, "No similar images found...")
+    if (len(results) == 0):
+        text_output.delete(1.0, END)
+        text_output.insert(1.0, "No similar images found...")
     else:
         count = 1
         for (score, resultID) in results:
-            # load the result image and display it
-            resultdata.append(resultID)
-            text.insert(1.0, str(count) + " " + resultID + "\n")
+            #adding reults to the album
+            result_data.append(resultID)
+            text_output.insert(1.0, str(count) + " " + resultID + "\n")
             count += 1
-        text.insert(1.0, "Similar images : " + "\n")
+        text_output.insert(1.0, "Similar images : " + "\n")
 
         width = 400
         height = 400
-        print(resultdata[0])
-        img = Image.open(resultdata[0])
+        img = Image.open(result_data[0])
         img = img.resize((width, height), Image.ANTIALIAS)
-        img2 = ImageTk.PhotoImage(img)
-        panel.configure(image=img2)
-        panel.image = img2
-    for i in resultdata:
-        print(i)
-    print(len(resultdata))
-# ==========================================================================================================================================================
+        img1 = ImageTk.PhotoImage(img)
+        image_panel.configure(image=img1)
+        image_panel.image = img1
+    text_output.insert(1.0, "Total " + str(len(result_data) - 1) + " similar images found ")
 
 
 app = Tk()
 app.geometry("1200x600")
 
-resultdata = []
-current = 0
-app.title("Content based Image Retrieval")
+result_data = []
+current_index = 0
+app.title("content based image retrieval")
 app.resizable(0, 0)
 
-my_frame3 = tk.Frame(app, relief=RIDGE, width=1100, height=50, borderwidth=3)
-my_frame3.pack(side=TOP)
-my_frame3.pack_propagate(0)
-
-index = Button(my_frame3, text=" index data ", command=open_image, relief=RIDGE, bg="white")
-index.pack(side=LEFT)
-
-image = Button(my_frame3, text=" select image ", command=select_image, relief=RIDGE, bg="white")
-image.pack(side=LEFT)
-
-search = Button(my_frame3, text=" search ", command=search_similar, relief=RIDGE, bg="white")
-search.pack(side=LEFT)
-
-my_frame = tk.Frame(app, relief=RIDGE, width=400, height=500, borderwidth=3, )
-my_frame.pack(side=LEFT)
-my_frame.pack_propagate(0)
-
-text = Text(my_frame)
-text.pack(expand=True, fill='both')
+#frame to store button
+button_frame = tk.Frame(app, relief=RIDGE, width=1100, height=50, borderwidth=3)
+button_frame.pack(side=TOP)
+button_frame.pack_propagate(0)
 
 
-my_frame1 = tk.Frame(app, relief=RIDGE, width=800, height=500, borderwidth=3)
-my_frame1.pack(side=LEFT)
-my_frame1.pack_propagate(0)
+folder_button = Button(button_frame, text=" select dataset [Image Folder] ", command=open_image, relief=RIDGE, bg="white")
+folder_button.pack(side=LEFT)
 
-panel = Label(my_frame1,bg="green")
-panel.pack(side = TOP)
+image_button = Button(button_frame, text=" select image ", command=select_image, relief=RIDGE, bg="white")
+image_button.pack(side=LEFT)
 
+search_button = Button(button_frame, text=" search ", command=search_similar, relief=RIDGE, bg="white")
+search_button.pack(side=LEFT)
 
-my_frame4 = tk.Frame(my_frame1, relief=RIDGE, width=800, height=50, borderwidth=3)
-my_frame4.pack(side=BOTTOM)
+# frame to display image meta data
+result_frame = tk.Frame(app, relief=RIDGE, width=400, height=500, borderwidth=3, )
+result_frame.pack(side=LEFT)
+result_frame.pack_propagate(0)
 
-back = Button(my_frame4,text="<<",command=back)
+text_output = Text(result_frame)
+text_output.pack(expand=True, fill='both')
 
-back.pack(side = LEFT)
+image_output = tk.Frame(app, relief=RIDGE, width=800, height=500, borderwidth=3)
+image_output.pack(side=LEFT)
+image_output.pack_propagate(0)
 
-next =Button(my_frame4,text=">>",command=next)
-next.pack(side = RIGHT)
+image_panel = Label(image_output)
+image_panel.pack(side=TOP)
 
+# frame to display similar images
+album_frame = tk.Frame(image_output, relief=RIDGE, width=800, height=50, borderwidth=3)
+album_frame.pack(side=BOTTOM)
 
+back_button = Button(album_frame, text="<<", command=back)
+back_button.pack(side=LEFT)
 
-
-
+next_button = Button(album_frame, text=">>", command=next)
+next_button.pack(side=RIGHT)
 
 app.mainloop()
