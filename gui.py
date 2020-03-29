@@ -2,11 +2,12 @@
 import csv
 # to access images in folder
 import glob
+import tkinter as tk
 # for GUI
 from tkinter import *
-import tkinter as tk
 # for file dialog
 from tkinter import filedialog
+
 # for image operations
 import cv2
 # for basic image processing
@@ -130,10 +131,11 @@ class Searcher:
 def open_image():
     global result_data
     global folder_name
+    result_data = []
     # To select dataset folder
     folder_name = filedialog.askdirectory()
     cd = ColorDescriptor((8, 12, 3))
-    output = open(folder_name + "/index.csv", "w") # creating csv file
+    output = open(folder_name + "/index.csv", "w")  # creating csv file
     filecount = 1
     for imagePath in glob.glob(folder_name + "//" "*.*"):
         if imagePath.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
@@ -154,7 +156,8 @@ def open_image():
 def select_image():
     global image_file
     # selecting image to search
-    image_file = filedialog.askopenfilename(initialdir="C:", title="Open image", filetypes=(("jpeg files", "*.jpg"), ("all files", "*.*")))
+    image_file = filedialog.askopenfilename(initialdir="C:", title="Open image",
+                                            filetypes=(("jpeg files", "*.jpg"), ("all files", "*.*")))
     # adding image to result file
     result_data.append(image_file)
     text_output.delete(1.0, END)
@@ -189,6 +192,7 @@ def position():
     else:
         return FALSE
 
+
 def next():
     # function to display next image
     global current_index
@@ -197,6 +201,7 @@ def next():
         display()
     else:
         pass
+
 
 def back():
     # function to display previous image
@@ -230,7 +235,7 @@ def search_similar():
     else:
         count = 1
         for (score, resultID) in results:
-            #adding reults to the album
+            # adding reults to the album
             result_data.append(resultID)
             text_output.insert(1.0, str(count) + " " + resultID + "\n")
             count += 1
@@ -254,13 +259,13 @@ current_index = 0
 app.title("content based image retrieval")
 app.resizable(0, 0)
 
-#frame to store button
+# frame to store button
 button_frame = tk.Frame(app, relief=RIDGE, width=1100, height=50, borderwidth=3)
 button_frame.pack(side=TOP)
 button_frame.pack_propagate(0)
 
-
-folder_button = Button(button_frame, text=" select dataset [Image Folder] ", command=open_image, relief=RIDGE, bg="white")
+folder_button = Button(button_frame, text=" select dataset [Image Folder] ", command=open_image, relief=RIDGE,
+                       bg="white")
 folder_button.pack(side=LEFT)
 
 image_button = Button(button_frame, text=" select image ", command=select_image, relief=RIDGE, bg="white")
