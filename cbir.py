@@ -18,6 +18,7 @@ import numpy as np
 from PIL import ImageTk, Image
 
 
+
 class ColorDescriptor:
     def __init__(self, bins):
         # store the number of bins for the 3D histogram
@@ -35,8 +36,7 @@ class ColorDescriptor:
 
         # divide the image into four rectangles/segments (top-left,
         # top-right, bottom-right, bottom-left)
-        segments = [(0, cX, 0, cY), (cX, w, 0, cY), (cX, w, cY, h),
-                    (0, cX, cY, h)]
+        segments = [(0, cX, 0, cY), (cX, w, 0, cY), (cX, w, cY, h),(0, cX, cY, h)]
 
         # construct an elliptical mask representing the center of the
         # image
@@ -68,8 +68,7 @@ class ColorDescriptor:
     def histogram(self, image, mask):
         # extract a 3D color histogram from the masked region of the
         # image, using the supplied number of bins per channel
-        hist = cv2.calcHist([image], [0, 1, 2], mask, self.bins,
-                            [0, 180, 0, 256, 0, 256])
+        hist = cv2.calcHist([image], [0, 1, 2], mask, self.bins,[0, 180, 0, 256, 0, 256])
 
         # normalize the histogram if we are using OpenCV 2.4
         if imutils.is_cv2():
@@ -127,11 +126,16 @@ class Searcher:
         d = 0.5 * np.sum([((a - b) ** 2) / (a + b + eps)
                           for (a, b) in zip(histA, histB)])
 
+        # return the chi-squared distance
+        return d
 
-def open_image():
-    global result_data
+
+def open_folder():
     global folder_name
+    global result_data
+    global current_index
     result_data = []
+    current_index = 0
     # To select dataset folder
     folder_name = filedialog.askdirectory()
     cd = ColorDescriptor((8, 12, 3))
@@ -144,7 +148,6 @@ def open_image():
             filecount += 1
             imageID = imagePath[imagePath.rfind("/") + 1:]
             image = cv2.imread(imagePath)
-            image = cv2.resize(image, (500, 300))
             features = cd.describe(image)
             # write the features to file
             features = [str(f) for f in features]
@@ -155,9 +158,11 @@ def open_image():
 
 def select_image():
     global image_file
+    global result_data
+    result_data = []
     # selecting image to search
     image_file = filedialog.askopenfilename(initialdir="C:", title="Open image",
-                                            filetypes=(("jpeg files", "*.jpg"), ("all files", "*.*")))
+                                            filetypes=(("jpeg files", "*.jpg"),("png files", "*.png"), ("all files", "*.*")))
     # adding image to result file
     result_data.append(image_file)
     text_output.delete(1.0, END)
@@ -174,13 +179,56 @@ def select_image():
     image_panel.image = img1
 
 
+def search_similar():
+    global image_file
+    global result_data
+    global folder_name
+    global current_index
+
+    # initialize the image descriptor
+    cd = ColorDescriptor((8, 12, 3))
+
+    current_index = 0
+    text_output.delete(1.0, END)
+
+    # load the query image and describe it
+    query = cv2.imread(image_file)
+    features = cd.describe(query)
+
+    # perform the search
+    searcher = Searcher(folder_name + "/index.csv")
+    results = searcher.search(features)
+
+    if (len(results) == 0):
+        text_output.delete(1.0, END)
+        text_output.insert(1.0, "No similar images found...")
+    else:
+        count = 1
+        for (score, resultID) in results:
+            # adding reults to the album
+            result_data.append(resultID)
+            text_output.insert(1.0, str(count) + " " + resultID + "\n")
+            count += 1
+
+        width = 400
+        height = 400
+        img = Image.open(result_data[0])
+        img = img.resize((width, height), Image.ANTIALIAS)
+        img1 = ImageTk.PhotoImage(img)
+        image_panel.configure(image=img1)
+        image_panel.image = img1
+    current_index = 1
+    text_output.insert(1.0, "Total " + str(len(result_data) - 1) + " similar images found \n ")
+    display()
+
+
 def display():
     # function to display similar images
     width = 400
     height = 400
-    if(len(result_data)>1):
-        #text_output.delete(1.0, END)
-        #text_output.insert(1.0, str(len(result_data)))
+    if (len(result_data) > 1):
+        # text_output.delete(1.0, END)
+        # text_output.insert(1.0, str(len(result_data)))
 
         img = Image.open(result_data[current_index])
         img = img.resize((width, height), Image.ANTIALIAS)
@@ -217,42 +265,6 @@ def back():
         pass
 
 
-def search_similar():
-    global image_file
-    global result_data
-    global folder_name
-
-    # initialize the image descriptor
-    cd = ColorDescriptor((8, 12, 3))
-
-    # load the query image and describe it
-    query = cv2.imread(image_file)
-    features = cd.describe(query)
-
-    # perform the search
-    searcher = Searcher(folder_name + "/index.csv")
-    results = searcher.search(features)
-
-    if (len(results) == 0):
-        text_output.delete(1.0, END)
-        text_output.insert(1.0, "No similar images found...")
-    else:
-        count = 1
-        for (score, resultID) in results:
-            # adding reults to the album
-            result_data.append(resultID)
-            text_output.insert(1.0, str(count) + " " + resultID + "\n")
-            count += 1
-
-        width = 400
-        height = 400
-        img = Image.open(result_data[0])
-        img = img.resize((width, height), Image.ANTIALIAS)
-        img1 = ImageTk.PhotoImage(img)
-        image_panel.configure(image=img1)
-        image_panel.image = img1
-    text_output.insert(1.0, "Total " + str(len(result_data) - 1) + " similar images found \n ")
-
 
 app = Tk()
 app.geometry("1200x600")
@@ -267,7 +279,7 @@ button_frame = tk.Frame(app, relief=RIDGE, width=1100, height=50, borderwidth=3)
 button_frame.pack(side=TOP)
 button_frame.pack_propagate(0)
 
-folder_button = Button(button_frame, text=" select dataset [Image Folder] ", command=open_image, relief=RIDGE,
+folder_button = Button(button_frame, text=" select dataset [Image Folder] ", command=open_folder, relief=RIDGE,
                        bg="white")
 folder_button.pack(side=LEFT)
 
